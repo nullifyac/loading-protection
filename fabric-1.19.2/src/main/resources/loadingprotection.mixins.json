@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "com.loadingprotection.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "LivingEntityDamageMixin",
+    "MobEntityAccessor",
+    "MobEntityTargetMixin"
+  ],
+  "client": [
+    "client.PlayerEntityNameMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
