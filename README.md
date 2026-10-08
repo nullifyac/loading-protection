@@ -2,12 +2,12 @@
 
 A Minecraft mod that protects players from damage while loading into a world or server. Available for multiple Minecraft versions on Forge, NeoForge, and Fabric.
 
-## Features
+## Published 1.0.2 features
 
 - **Invulnerability**: Players cannot take damage for a configurable duration after joining
 - **Mob Protection**: Mobs cannot target protected players
 - **Fair Play**: Protected players cannot deal damage to others or mobs
-- **Adaptive Timer**: Protection lasts up to the configured maximum but ends immediately once the player moves their view (crosshair)
+- **Adaptive Timer**: Protection lasts up to the configured maximum but ends when the player moves more than 0.1 blocks from their join position. Looking around alone keeps protection active.
 - **Countdown Alerts**: Optional per-player chat messages show how many seconds of protection remain and warn when it ends
 - **Configurable**: Adjust protection duration and messaging via config file
 
@@ -42,7 +42,7 @@ The mod creates a configuration file at `config/loadingprotection-common.toml`:
     showMessages = true
 ```
 
-Messages let protected players know exactly how long they have left before the timer expires (up to the configured max) and confirm when protection ends early because they moved their view. They are only sent to the affected player and appear once per 5 seconds at most to avoid chat spam.
+Messages let protected players know how long they have before the timer expires and confirm when protection ends. They are sent only to the affected player. Countdown messages appear at most once every 5 seconds to avoid chat spam.
 
 Fabric versions use `config/loadingprotection.json` with the same `protectionDuration` and `showMessages` keys.
 
@@ -52,7 +52,11 @@ Fabric versions use `config/loadingprotection.json` with the same `protectionDur
 2. Place it in your `mods` folder
 3. Launch Minecraft with the appropriate mod loader (Forge, NeoForge, or Fabric). Fabric versions also require Fabric API.
 
+Install the mod on the server to apply protection in multiplayer. Forge and NeoForge versions require it on connecting clients too. Fabric clients can connect without the mod; installing it on a Fabric client adds the protection icon. In singleplayer, install it in your client instance.
+
 ## Building from Source
+
+The behavior above describes the published 1.0.2 downloads. This source checkout contains a camera-trigger experiment and does not reproduce those published JARs exactly.
 
 Navigate to the version folder you want to build and run:
 
@@ -69,12 +73,12 @@ The built JAR will be in `build/libs/`
 
 The mod uses a timer-based approach:
 1. When a player joins, they are added to a protection list with the current timestamp
-2. Until they move their view or the timer hits the configured maximum, the player:
+2. Until they move more than 0.1 blocks from their join position or the timer hits the configured maximum, the player:
    - Cannot take any damage
    - Cannot be targeted by hostile mobs
    - Cannot deal damage to other entities
-3. As soon as the player moves their view (or the timer finally expires), normal gameplay resumes and they receive a chat notice if messaging is enabled
+3. As soon as the player moves beyond that threshold (or the timer expires), normal gameplay resumes and they receive a chat notice if messaging is enabled
 
 ## License
 
-All Rights Reserved
+[MIT License](LICENSE). Copyright (c) 2026 LoadingProtection Team.
