@@ -4,7 +4,7 @@ license="MIT"
 
 [[mods]]
 modId="loadingprotection"
-version="1.0.2"
+version="1.0.3"
 displayName="Loading Protection"
 description='''
 Protects players from damage and mob targeting for a configurable duration after joining a world or server.

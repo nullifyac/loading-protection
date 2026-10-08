@@ -2,7 +2,7 @@
 
 A Minecraft mod that protects players from damage while loading into a world or server. Available for multiple Minecraft versions on Forge, NeoForge, and Fabric.
 
-## Published 1.0.2 features
+## Features
 
 - **Invulnerability**: Players cannot take damage for a configurable duration after joining
 - **Mob Protection**: Mobs cannot target protected players
@@ -10,6 +10,8 @@ A Minecraft mod that protects players from damage while loading into a world or 
 - **Adaptive Timer**: Protection lasts up to the configured maximum but ends when the player moves more than 0.1 blocks from their join position. Looking around alone keeps protection active.
 - **Countdown Alerts**: Optional per-player chat messages show how many seconds of protection remain and warn when it ends
 - **Configurable**: Adjust protection duration and messaging via config file
+
+Forge 1.16.5 version 1.0.3 fixes mobs retaining protected players as attack targets. Its older 1.0.2 release blocks damage but does not clear those targets.
 
 ## Supported Versions
 
@@ -56,7 +58,7 @@ Install the mod on the server to apply protection in multiplayer. Forge and NeoF
 
 ## Building from Source
 
-The behavior above describes the published 1.0.2 downloads. This source checkout contains a camera-trigger experiment and does not reproduce those published JARs exactly.
+The Forge 1.16.5 module uses the published position-based movement behavior and includes the 1.0.3 mob-target fix. The other modules still contain a camera-trigger experiment and do not reproduce their published 1.0.2 JARs exactly.
 
 Navigate to the version folder you want to build and run:
 

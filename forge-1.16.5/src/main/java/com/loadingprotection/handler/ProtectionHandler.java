@@ -4,10 +4,10 @@ import com.loadingprotection.LoadingProtectionMod;
 import com.loadingprotection.config.LoadingProtectionConfig;
 import com.loadingprotection.network.LoadingProtectionNetwork;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class ProtectionHandler {
-    private static final float LOOK_THRESHOLD_DEGREES = 1.0F;
+    private static final double MOVEMENT_THRESHOLD_SQ = 0.01D;
 
     // Map to track when players joined and their protection status
     private final Map<UUID, ProtectionData> protectedPlayers = new HashMap<>();
@@ -33,13 +33,15 @@ public class ProtectionHandler {
 
     private static class ProtectionData {
         private final long startTime;
-        private final float originYaw;
-        private final float originPitch;
+        private final double originX;
+        private final double originY;
+        private final double originZ;
 
-        private ProtectionData(long startTime, float originYaw, float originPitch) {
+        private ProtectionData(long startTime, double originX, double originY, double originZ) {
             this.startTime = startTime;
-            this.originYaw = originYaw;
-            this.originPitch = originPitch;
+            this.originX = originX;
+            this.originY = originY;
+            this.originZ = originZ;
         }
     }
 
@@ -51,7 +53,7 @@ public class ProtectionHandler {
         PlayerEntity player = event.getPlayer();
         long currentTime = System.currentTimeMillis();
         UUID uuid = player.getGameProfile().getId();
-        protectedPlayers.put(uuid, new ProtectionData(currentTime, player.rotationYaw, player.rotationPitch));
+        protectedPlayers.put(uuid, new ProtectionData(currentTime, player.getPosX(), player.getPosY(), player.getPosZ()));
         if (player instanceof ServerPlayerEntity) {
             ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
             onlineProtectedPlayers.put(uuid, serverPlayer);
@@ -135,15 +137,16 @@ public class ProtectionHandler {
      */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onMobTarget(LivingSetAttackTargetEvent event) {
+        LivingEntity entity = event.getEntityLiving();
         LivingEntity target = event.getTarget();
 
-        // If a mob is trying to target a protected player, we can't cancel this event
-        // but we can track it - the attack will still be cancelled by onLivingAttack
-        if (target instanceof PlayerEntity) {
-            PlayerEntity player = (PlayerEntity) target;
-            if (isProtected(player)) {
-                // Note: LivingSetAttackTargetEvent cannot be cancelled in 1.16.5
-                // Protection is handled through LivingAttackEvent instead
+        if (!entity.world.isRemote && entity instanceof MobEntity
+                && target instanceof PlayerEntity && isProtected((PlayerEntity) target)) {
+            MobEntity mob = (MobEntity) entity;
+            // The event fires after assignment and is not cancellable in 1.16.5.
+            // Clearing the assigned target fires a second event with a null target.
+            if (mob.getAttackTarget() == target) {
+                mob.setAttackTarget(null);
             }
         }
     }
@@ -164,9 +167,9 @@ public class ProtectionHandler {
                 ProtectionData data = entry.getValue();
                 ServerPlayerEntity serverPlayer = onlineProtectedPlayers.get(uuid);
 
-                if (serverPlayer != null && hasPlayerLooked(serverPlayer, data)) {
+                if (serverPlayer != null && hasPlayerMoved(serverPlayer, data)) {
                     iterator.remove();
-                    finalizeProtection(uuid, serverPlayer, "Loading protection disabled because you moved your view.");
+                    finalizeProtection(uuid, serverPlayer, "Loading protection disabled because you moved.");
                     continue;
                 }
 
@@ -209,10 +212,11 @@ public class ProtectionHandler {
             .mergeStyle(TextFormatting.GREEN), uuid);
     }
 
-    private boolean hasPlayerLooked(ServerPlayerEntity player, ProtectionData data) {
-        float yawDelta = MathHelper.wrapDegrees(player.rotationYaw - data.originYaw);
-        float pitchDelta = player.rotationPitch - data.originPitch;
-        return Math.abs(yawDelta) > LOOK_THRESHOLD_DEGREES || Math.abs(pitchDelta) > LOOK_THRESHOLD_DEGREES;
+    private boolean hasPlayerMoved(ServerPlayerEntity player, ProtectionData data) {
+        double dx = player.getPosX() - data.originX;
+        double dy = player.getPosY() - data.originY;
+        double dz = player.getPosZ() - data.originZ;
+        return dx * dx + dy * dy + dz * dz > MOVEMENT_THRESHOLD_SQ;
     }
 
     private void finalizeProtection(UUID uuid, ServerPlayerEntity serverPlayer, String message) {
